@@ -309,8 +309,9 @@ var addResultsToHolder = function (result) {
     resultsTemplate = Handlebars.compile(`
         {{#each filenames}}
         <div class="col-md-2 result" data-result-id="{{this}}">
-            <div class="action-button"></div>
-            <img src="./dataset/Volumes/Samsung_T5/DATASETS/LSC2020/{{@root.dir}}/{{this}}" alt="result">
+            <div class="time">{{this.time}}</div>
+            <div class="inanswer">{{this.inanswer}}</div>
+            <img src="./dataset/Volumes/Samsung_T5/DATASETS/LSC2020/{{@root.dir}}/{{this.name}}" alt="result">
         </div>
         {{/each}}
         `);

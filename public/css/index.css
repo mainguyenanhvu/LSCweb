@@ -191,7 +191,7 @@ header .logo {
 
 }
 
-.result-holder>div>div, .result-holder>div>img{
+.result-holder>div>img{
     height: 100%;
 }
 
@@ -199,20 +199,25 @@ header .logo {
     padding: 2px;
 }
 
-.result-holder .action-button {
+.result-holder .time {
+    margin: 2px;
+    padding: 2px;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+.result-holder .inanswer {
     margin: 2px;
     position: absolute;
     left: 0;
+    right: 0;
     top: 0;
-    width: 1.5em;
-    height: 1.5em;
-    background-color: rgba(247, 247, 247, 0.5);
-    border-radius: 50%;
-    display: none;
-    cursor: pointer;
+    background-color: greenyellow;
 }
 
-.result-holder .action-button::before{
+/* .result-holder .action-button::before{
     font-family: "FontAwesome";
     content: "\f00c";
     border-style: solid;
@@ -227,7 +232,7 @@ header .logo {
     vertical-align: middle;
     text-align: center;
     border-color: #7e7e7e;
-}
+} */
 
 .result-holder img {
     width: 100%;
