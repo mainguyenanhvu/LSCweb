@@ -25,7 +25,7 @@ var addResultsTrigger = function (results) {
         }).appendTo($(".deleted-result-holder"));
 
         $(".deleted-result-holder:first>div").sort(function (a, b) {
-            return $(a).data('priority') > $(b).data('priority') ? -1 : 1;
+            return $(a).data('priority') < $(b).data('priority') ? -1 : 1;
         }).appendTo($(".deleted-result-holder:first"));
 
         $('.deleted-result-holder').animate({
@@ -48,7 +48,7 @@ var addDeleteResultsTrigger = function (deletedResults) {
         }).appendTo($(".result-holder:first"));
 
         $(".result-holder:first>div").sort(function (a, b) {
-            return $(a).data('priority') > $(b).data('priority') ? -1 : 1;
+            return $(a).data('priority') < $(b).data('priority') ? -1 : 1;
         }).appendTo($(".result-holder:first"));
     });
 };
@@ -433,7 +433,7 @@ var setCountdownTimer = function () {
 
     setTimer(DEFAULT_TIME);
 
-    // Update the count down every 1 second
+    // Update th
     setInterval(timer, 1000);
 
     $('.timer-holder>i:first').click(function () {
@@ -562,7 +562,7 @@ $(document).ready(async function () {
 
             resultsTemplate = Handlebars.compile(`
             {{#each results}}
-            <div class="col-md-2 result" data-result-id="{{id}}" data-priority=0>
+            <div class="col-md-2 result" data-result-id="{{id}}" data-priority="{{priority}}">
                 <div class="date"><i class='far fa-star'></i></div>
                 <div class="semantic">{{weekday}} {{date}} {{time}}</div>
                 <img src="./dataset/{{path}}" alt="result">
@@ -571,7 +571,7 @@ $(document).ready(async function () {
             `);
 
             $('.result-holder:first').html(resultsTemplate({
-                'results': listImgPath.map((imgPath) => {
+                'results': listImgPath.map((imgPath, i) => {
                     console.log(imgPath)
                     try {
                         value = imgPath.split('/').pop()
@@ -579,12 +579,14 @@ $(document).ready(async function () {
                         time = parseInt(value[0]) ? value.split('_')[1] : value.split('_')[3];
                         date = date.substring(0, 4) + '-' + date.substring(4, 6) + '-' + date.substring(6);
                         time = time.substring(0, 2) + ':' + time.substring(2, 4) + ':' + time.substring(4, 6);
+                        ext = date.substring(0, 4) == '2018' ? '.JPG' : '.jpg';
                         return {
                             'id': imgPath,
                             'date': date,
                             'time': time,
                             'weekday': getWeekday(date),
-                            'path': imgPath
+                            'path': imgPath + ext,
+                            'priority': i
                         }
                     }
                     catch {
@@ -593,14 +595,19 @@ $(document).ready(async function () {
                             'date': '',
                             'time': '',
                             'weekday': '',
-                            'path': imgPath
+                            'path': imgPath + ext,
+                            priority: i
                         }
                     }
                 })
             }));
 
+            // $(".result-holder:first>div").sort(function (a, b) {
+            //     return $(a).children('img').attr('src') > $(b).children('img').attr('src') ? 1 : -1;
+            // }).appendTo($(".result-holder:first"));
+
             $(".result-holder:first>div").sort(function (a, b) {
-                return $(a).children('img').attr('src') > $(b).children('img').attr('src') ? 1 : -1;
+                return $(a).data('priority') < $(b).data('priority') ? -1 : 1;
             }).appendTo($(".result-holder:first"));
 
             // $(".result-holder:first .date>i").click(onStarClick);
