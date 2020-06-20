@@ -606,10 +606,8 @@ var handlerTimeFilter = function () {
         var values = $(this).find(':selected').map(function () {
             return $(this).val();
         }).get();
-        if (!values.includes('any')) {
-            FILTERS['weekday'] = values;
-            applyTimeFilter()
-        }
+        FILTERS['weekday'] = values;
+        applyTimeFilter()
     });
 
     $('#period').on('change', function () {
@@ -622,9 +620,9 @@ var handlerTimeFilter = function () {
             $('#end-time').val('');
             FILTERS['starttime'] = '';
             FILTERS['endtime'] = '';
-            FILTERS['period'] = values;
-            applyTimeFilter();
         }
+        FILTERS['period'] = values;
+        applyTimeFilter();
     });
 
     $('#start-time').on('change', function () {
@@ -720,7 +718,7 @@ var applyTimeFilter = function () {
                 return rtime > endtime;
             }).addClass('custom-hidden');
         }
-    } else if(!period.includes('any')) {
+    } else if (!period.includes('any')) {
         results.filter(function () {
             var rtime = $(this).find('.semantic').text().split(' ')[2].substring(0, 5);
             return !period.includes(getPeriod(rtime));
@@ -732,7 +730,7 @@ var applyTimeFilter = function () {
     }
 }
 
-var getPeriod = function(time) {
+var getPeriod = function (time) {
     if (time < '06:00') {
         return 'night';
     }
