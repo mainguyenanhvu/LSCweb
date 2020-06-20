@@ -5,11 +5,11 @@
         <div class="row datetime-picker-holder">
             <div class="col-md-3 date-picker">
                 <div>Start date:</div>
-                <input type="date">
+                <input  type="date">
             </div>
             <div class="col-md-3 time-picker">
                 <div>Start time:</div>
-                <input type="time">
+                <input id="start-time" type="time">
             </div>
             <div class="col-md-3 date-picker">
                 <div>End date:</div>
@@ -17,14 +17,14 @@
             </div>
             <div class="col-md-3 time-picker">
                 <div>End time:</div>
-                <input type="time">
+                <input id="end-time" type="time">
             </div>
         </div>
 
         <div class="row timebase-timezone-holder mb-3">
-            <div class="col-md-6 d-flex timebase">
+            <div class="col-md-6 d-flex timebase" id="weekday">
                 <span>Weekday:</span>
-                <select class="flex-grow-1">
+                <select class="flex-grow-1" multiple>
                     <option value="any" selected>Any</option>
                     <option value="mon">Monday</option>
                     <option value="tue">Tuesday</option>
@@ -35,9 +35,9 @@
                     <option value="sun">Sunday</option>
                 </select>
             </div>
-            <div class="col-md-6 d-flex timezone">
+            <div class="col-md-6 d-flex timezone" id="period">
                 <span>Period:</span>
-                <select class="flex-grow-1">
+                <select class="flex-grow-1" multiple>
                     <option value="any" selected>Any</option>
                     <option value="mor">Morning</option>
                     <option value="aft">Afternoon</option>

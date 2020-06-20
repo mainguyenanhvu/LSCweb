@@ -168,10 +168,6 @@ header .logo {
 
 /* Tags */
 
-.tag {
-    padding: 4px 0;
-}
-
 .tag>span {
     padding: 4px;
     margin-right: 4px;
@@ -337,4 +333,8 @@ footer {
     100% {
         transform: rotate(360deg);
     }
+}
+
+.date-tab-holder {
+    padding: 0;
 }

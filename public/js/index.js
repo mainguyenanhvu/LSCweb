@@ -1,3 +1,11 @@
+var FILTERS = {
+    'date': 'all',
+    'weekday': ['any'],
+    'period': ['any'],
+    'starttime': '',
+    'endtime': ''
+}
+
 var addMouseTriggerOnResult = function (result) {
     result.mouseenter(function () {
         $(this).children(".action-button").css("display", "block");
@@ -38,6 +46,7 @@ var addResultsTrigger = function (results) {
 
 var addDeleteResultsTrigger = function (deletedResults) {
     deletedResults.find('.date>i').removeClass('fa').addClass('far');
+    deletedResults.data('priority', 0);
     deletedResults.click(function () {
         $(".result-holder:first").append($(this).clone());
         addResultsTrigger($(".result-holder:first>div:last"));
@@ -490,6 +499,252 @@ var onStarClick = function (e) {
     e.stopPropagation();
 }
 
+var onImport = function () {
+    var fileReader = new FileReader();
+
+    fileReader.onload = function (e) {
+        var txt = e.target.result.trim();
+        var listImgPath = txt.split('\n');
+
+        resultsTemplate = Handlebars.compile(`
+        {{#each results}}
+        <div class="col-md-2 result" data-result-id="{{id}}" data-priority=0>
+            <div class="date"><i class='far fa-star'></i></div>
+            <div class="semantic">{{weekday}} {{date}} {{time}}</div>
+            <img src="./dataset/{{path}}" alt="result">
+        </div>
+        {{/each}}
+        `);
+
+        dateTabsTemplate = Handlebars.compile(`
+        <div class="horizontal-line mt-0 mb-2 bg-secondary"></div>
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link active" href="#all">All</a>
+            </li>
+            {{#each dates}}
+            <li class="nav-item">
+                <a class="nav-link" href="#{{date}}">{{date}}</a>
+            </li>
+            {{/each}}
+        </ul>
+        `);
+
+        $('.result-holder:first').html(resultsTemplate({
+            'results': listImgPath.map((imgPath) => {
+                try {
+                    value = imgPath.split('/').pop()
+                    date = parseInt(value[0]) ? value.split('_')[0] : value.split('_')[2];
+                    time = parseInt(value[0]) ? value.split('_')[1] : value.split('_')[3];
+                    date = date.substring(0, 4) + '-' + date.substring(4, 6) + '-' + date.substring(6);
+                    time = time.substring(0, 2) + ':' + time.substring(2, 4) + ':' + time.substring(4, 6);
+                    ext = date.substring(0, 4) == '2018' ? '.JPG' : '.jpg';
+                    return {
+                        'id': imgPath,
+                        'date': date,
+                        'time': time,
+                        'weekday': getWeekday(date),
+                        'path': imgPath
+                    }
+                }
+                catch {
+                    return {
+                        'id': imgPath,
+                        'date': '',
+                        'time': '',
+                        'weekday': '',
+                        'path': imgPath
+                    }
+                }
+            })
+        }));
+
+        listDate = listImgPath.map((imgPath) => {
+            value = imgPath.split('/').pop()
+            date = parseInt(value[0]) ? value.split('_')[0] : value.split('_')[2];
+            date = date.substring(0, 4) + '-' + date.substring(4, 6) + '-' + date.substring(6);
+            return date;
+        });
+
+        listDate = Array.from(new Set(listDate));
+
+        listDate.sort();
+
+        $(".date-tab-holder").html(dateTabsTemplate({
+            'dates': listDate.map((date) => {
+                return {
+                    'date': date
+                }
+            })
+        }));
+
+        $(".date-tab-holder .nav-tabs a").click(function () {
+            $(this).tab('show');
+            FILTERS['date'] = $(this).text();
+            if (FILTERS['date'].toLowerCase() != 'all') {
+                $('#weekday :selected').prop('selected', false);
+                $('#weekday option[value="any"]').prop('selected', true);
+                FILTERS['weekday'] = ['any'];
+            }
+            applyTimeFilter();
+        });
+
+        $(".result-holder:first>div").sort(function (a, b) {
+            return $(a).children('img').attr('src') > $(b).children('img').attr('src') ? 1 : -1;
+        }).appendTo($(".result-holder:first"));
+
+        $('.deleted-result-holder').html('');
+
+        addResultsTrigger($(".result-holder:first>div"));
+    }
+
+    fileReader.readAsText($(this).prop('files')[0], 'utf-8');
+}
+
+var handlerTimeFilter = function () {
+    $('#weekday').on('change', function () {
+        var values = $(this).find(':selected').map(function () {
+            return $(this).val();
+        }).get();
+        if (!values.includes('any')) {
+            FILTERS['weekday'] = values;
+            applyTimeFilter()
+        }
+    });
+
+    $('#period').on('change', function () {
+        var values = $(this).find(':selected').map(function () {
+            return $(this).val();
+        }).get();
+        console.log(values);
+        if (!values.includes('any')) {
+            $('#start-time').val('');
+            $('#end-time').val('');
+            FILTERS['starttime'] = '';
+            FILTERS['endtime'] = '';
+            FILTERS['period'] = values;
+            applyTimeFilter();
+        }
+    });
+
+    $('#start-time').on('change', function () {
+        var value = $(this).val();
+        var evalue = $('#end-time').val();
+        if (evalue != '' && value != '' && evalue < value) {
+            alert('Invalid start time!!!');
+            $(this).val('');
+            return;
+        }
+        FILTERS['starttime'] = value;
+        $('#period :selected').prop('selected', false);
+        $('#period option[value="any"]').prop('selected', true);
+        FILTERS['period'] = ['any'];
+        applyTimeFilter();
+    });
+
+    $('#end-time').on('change', function () {
+        var value = $(this).val();
+        var rvalue = $('#start-time').val();
+        if (rvalue != '' && value != '' && rvalue > value) {
+            alert('Invalid end time!!!');
+            $(this).val('');
+            return;
+        }
+        FILTERS['endtime'] = value;
+        $('#period :selected').prop('selected', false);
+        $('#period option[value="any"]').prop('selected', true);
+        FILTERS['period'] = ['any'];
+        applyTimeFilter();
+    });
+}
+
+var applyTimeFilter = function () {
+    var results = $('.result-holder:first>div');
+    var deletedResults = $('.deleted-result-holder>div');
+    results.addClass('custom-hidden');
+    deletedResults.addClass('custom-hidden');
+
+    var date = FILTERS['date'];
+    var weekday = FILTERS['weekday'];
+    var period = FILTERS['period'];
+    var starttime = FILTERS['starttime'];
+    var endtime = FILTERS['endtime'];
+    date = typeof (date) == 'string' ? date.toLowerCase() : date.map((v) => { return v.toLowerCase() });
+    weekday = typeof (weekday) == 'string' ? weekday.toLowerCase() : weekday.map((v) => { return v.toLowerCase() });
+    period = typeof (period) == 'string' ? period.toLowerCase() : period.map((v) => { return v.toLowerCase() });
+
+    if (date != 'all') {
+        results.filter(function () {
+            var rdate = $(this).find('.semantic').text().split(' ')[1];
+            return rdate == date;
+        }).removeClass('custom-hidden');
+        deletedResults.filter(function () {
+            var rdate = $(this).find('.semantic').text().split(' ')[1];
+            return rdate == date;
+        }).removeClass('custom-hidden');
+    }
+    else {
+        results.removeClass('custom-hidden');
+        deletedResults.removeClass('custom-hidden');
+
+        if (!weekday.includes('any')) {
+            results.filter(function () {
+                var rweekday = $(this).find('.semantic').text().split(' ')[0].toLowerCase();
+                return typeof (weekday) == 'string' && rweekday != weekday || !weekday.includes(rweekday);
+            }).addClass('custom-hidden');
+            deletedResults.filter(function () {
+                var rweekday = $(this).find('.semantic').text().split(' ')[0].toLowerCase();
+                return typeof (weekday) == 'string' && rweekday != weekday || !weekday.includes(rweekday);
+            }).addClass('custom-hidden');
+        }
+    }
+
+    if (starttime != '' || endtime != '') {
+        if (starttime != '') {
+            results.filter(function () {
+                var rtime = $(this).find('.semantic').text().split(' ')[2].substring(0, 5);
+                return rtime < starttime;
+            }).addClass('custom-hidden');
+            deletedResults.filter(function () {
+                var rtime = $(this).find('.semantic').text().split(' ')[2].substring(0, 5);
+                return rtime < starttime;
+            }).addClass('custom-hidden');
+        }
+        if (endtime != '') {
+            results.filter(function () {
+                var rtime = $(this).find('.semantic').text().split(' ')[2].substring(0, 5);
+                return rtime > endtime;
+            }).addClass('custom-hidden');
+            deletedResults.filter(function () {
+                var rtime = $(this).find('.semantic').text().split(' ')[2].substring(0, 5);
+                return rtime > endtime;
+            }).addClass('custom-hidden');
+        }
+    } else if(!period.includes('any')) {
+        results.filter(function () {
+            var rtime = $(this).find('.semantic').text().split(' ')[2].substring(0, 5);
+            return !period.includes(getPeriod(rtime));
+        }).addClass('custom-hidden');
+        deletedResults.filter(function () {
+            var rtime = $(this).find('.semantic').text().split(' ')[2].substring(0, 5);
+            return !period.includes(getPeriod(rtime));
+        }).addClass('custom-hidden');
+    }
+}
+
+var getPeriod = function(time) {
+    if (time < '06:00') {
+        return 'night';
+    }
+    if (time < '12:00') {
+        return 'mor';
+    }
+    if (time < '18:00') {
+        return 'aft';
+    }
+    return 'eve';
+}
+
 $(document).ready(async function () {
     handleDropdownCustomTrigger();
 
@@ -553,71 +808,13 @@ $(document).ready(async function () {
         $(this).attr('download', 'results');
     });
 
-    $('.import-export input[type="file"]').on('change', function () {
-        var fileReader = new FileReader();
-
-        fileReader.onload = function (e) {
-            var txt = e.target.result.trim();
-            var listImgPath = txt.split('\n');
-
-            resultsTemplate = Handlebars.compile(`
-            {{#each results}}
-            <div class="col-md-2 result" data-result-id="{{id}}" data-priority=0>
-                <div class="date"><i class='far fa-star'></i></div>
-                <div class="semantic">{{weekday}} {{date}} {{time}}</div>
-                <img src="./dataset/{{path}}" alt="result">
-            </div>
-            {{/each}}
-            `);
-
-            $('.result-holder:first').html(resultsTemplate({
-                'results': listImgPath.map((imgPath) => {
-                    console.log(imgPath)
-                    try {
-                        value = imgPath.split('/').pop()
-                        date = parseInt(value[0]) ? value.split('_')[0] : value.split('_')[2];
-                        time = parseInt(value[0]) ? value.split('_')[1] : value.split('_')[3];
-                        date = date.substring(0, 4) + '-' + date.substring(4, 6) + '-' + date.substring(6);
-                        time = time.substring(0, 2) + ':' + time.substring(2, 4) + ':' + time.substring(4, 6);
-                        return {
-                            'id': imgPath,
-                            'date': date,
-                            'time': time,
-                            'weekday': getWeekday(date),
-                            'path': imgPath
-                        }
-                    }
-                    catch {
-                        return {
-                            'id': imgPath,
-                            'date': '',
-                            'time': '',
-                            'weekday': '',
-                            'path': imgPath
-                        }
-                    }
-                })
-            }));
-
-            $(".result-holder:first>div").sort(function (a, b) {
-                return $(a).children('img').attr('src') > $(b).children('img').attr('src') ? 1 : -1;
-            }).appendTo($(".result-holder:first"));
-
-            // $(".result-holder:first .date>i").click(onStarClick);
-
-            $('.deleted-result-holder').html('');
-
-            addResultsTrigger($(".result-holder:first>div"));
-        }
-
-        fileReader.readAsText($(this).prop('files')[0], 'utf-8');
-    });
+    $('.import-export input[type="file"]').on('change', onImport);
 
     $('.import-export .import').click(function () {
         $('.import-export input[type="file"]').trigger('click');
     });
 
-    $('.swap i').click(function() {
+    $('.swap i').click(function () {
         results = $('.result-holder:first>div');
         deleted = $('.deleted-result-holder>div');
 
@@ -627,4 +824,6 @@ $(document).ready(async function () {
         $('.deleted-result-holder').empty().append(results);
         addDeleteResultsTrigger($('.deleted-result-holder>div'));
     });
+
+    handlerTimeFilter();
 });
